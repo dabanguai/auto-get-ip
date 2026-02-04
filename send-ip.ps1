@@ -1,4 +1,4 @@
-$ErrorActionPreference = "Stop"
+﻿$ErrorActionPreference = "Stop"
 # 获取公网IP，依次尝试多个免费接口，避免单点失败
 function Get-PublicIp {
     try {
@@ -52,16 +52,33 @@ function Push-WeComWebhook($url, $content) {
     $body = @{ msgtype = "text"; text = @{ content = $content } }
     try { Invoke-RestMethod -Method Post -Uri $url -ContentType "application/json" -Body (ConvertTo-Json $body -Depth 5) | Out-Null } catch {}
 }
-# PushPlus 推送给个人或群
+# PushPlus 推送给个人或群（按官方示例：UTF-8 字节 + application/json）
 function Push-PushPlus($token, $content) {
-    $body = @{ token = $token; title = "IP通知"; content = $content; template = "txt" }
+    $bodyObj = @{
+        token    = $token
+        title    = "IP通知"
+        content  = $content
+        template = "txt"
+    }
+
+    $json = $bodyObj | ConvertTo-Json -Depth 5
+
     try {
-        $res = Invoke-RestMethod -Method Post -Uri "https://www.pushplus.plus/send" -ContentType "application/json" -Body (ConvertTo-Json $body -Depth 5) -ErrorAction Stop
-        if ($res -and $res.code -ne 200) { Write-Output ("PushPlus失败: " + ($res.msg -as [string])) }
+        $res = Invoke-RestMethod `
+            -Method Post `
+            -Uri "https://www.pushplus.plus/send" `
+            -ContentType "application/json; charset=utf-8" `
+            -Body $json `
+            -ErrorAction Stop
+
+        if ($res -and $res.code -ne 200) {
+            Write-Output ("PushPlus失败: " + $res.msg)
+        }
     } catch {
         Write-Output ("PushPlus调用错误: " + $_.Exception.Message)
     }
 }
+
 # Telegram Bot 推送
 function Push-Telegram($token, $chatId, $content) {
     $url = "https://api.telegram.org/bot$token/sendMessage"
