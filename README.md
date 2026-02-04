@@ -186,19 +186,14 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\install-task.ps1
 - 每次登录或解锁都会自动执行 `send-ip.ps1` 并推送 IP。
 
 方式二：手动创建任务（可选）
-
-如果脚本注册失败，你可以手动用 `schtasks` 命令创建：
-
-```powershell
-schtasks /Create /TN "SendIPToWeCom-Logon" ^
-  /TR "powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"D:\project\auto-get-ip\send-ip.ps1\"" ^
-  /SC ONLOGON /F
-
-schtasks /Create /TN "SendIPToWeCom-Unlock" ^
-  /TR "powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"D:\project\auto-get-ip\send-ip.ps1\"" ^
-  /SC ONEVENT /EC Security ^
-  /MO "*[System[Provider[@Name='Microsoft-Windows-Security-Auditing'] and EventID=4801]]" ^
-  /F
+1. 打开「任务计划程序」，新建任务。
+> 任务计划程序库 -> Microsoft -> windows -> TaskScheduler -> 创建任务
+2. 配置项
+- 触发器：【登录时】
+- 操作
+  - 操作：【启动程序】
+  - 程序或脚本：【`powershell.exe`】
+    - 添加参数：【`-ExecutionPolicy Bypass -File "D:\project\auto-get-ip\send-ip.ps1"`】（可自行修改路径）
 ```
 
 > 提示：解锁触发依赖安全日志中的事件 4801，可能需要在本地安全策略中开启相应的审计项。
